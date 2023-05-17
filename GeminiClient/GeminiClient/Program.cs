@@ -2,15 +2,16 @@
 
 using CsvHelper;
 using CsvHelper.Configuration;
+using GeminiClient;
 using GeminiClient.Models;
 using Newtonsoft.Json;
 using System.Globalization;
-using System.Runtime;
 using Websocket.Client;
-using static System.Net.Mime.MediaTypeNames;
 
 Console.WriteLine("Hello, World!");
 
+
+var orderBook = new OrderBookNaive();
 Initialize();
 
  void Initialize()
@@ -31,15 +32,16 @@ Initialize();
         client.MessageReceived.Subscribe(msg =>
         {
             Console.WriteLine("Message received: " + msg);
-            ExportToCSV(msg);
+            var webSocketMessage = GetMessage(msg);
+            ExportToCSV(webSocketMessage);
 
-            
-
-            if (msg.ToString().ToLower() == "connected")
+            var geminiWebSocketEvent = webSocketMessage.events[0];
+            orderBook.AddOrder(new Order
             {
-                var data = "";
-                client.Send(data);
-            }
+                Price = geminiWebSocketEvent.price,
+                Quantity = geminiWebSocketEvent.remaining,
+                Type = geminiWebSocketEvent.side == "bid" ? OrderType.Buy : OrderType.Sell
+            });
         });
 
         client.Start();
@@ -53,17 +55,16 @@ Initialize();
     Console.ReadKey();
 }
 
-void ExportToCSV(ResponseMessage responseMessage)
-{
-    var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-    var message = JsonConvert.DeserializeObject<GeminiWebSocketMessage>(responseMessage.Text, settings);
+GeminiWebSocketMessage? GetMessage(ResponseMessage responseMessage) => JsonConvert.DeserializeObject<GeminiWebSocketMessage>(responseMessage.Text, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
+void ExportToCSV(GeminiWebSocketMessage? responseMessage)
+{
     var config = new CsvConfiguration(CultureInfo.InvariantCulture);
     config.HasHeaderRecord = false;
 
     using (var writer = new StreamWriter("file.csv", true))
     using (var csv = new CsvWriter(writer, config))
     {
-        csv.WriteRecords(message?.events);
+        csv.WriteRecords(responseMessage?.events);
     }
 }

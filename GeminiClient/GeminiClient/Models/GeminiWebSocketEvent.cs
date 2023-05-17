@@ -21,7 +21,7 @@ namespace GeminiClient.Models
 
         public override string ToString()
         {
-            return string.Format("[type={0}, side={1}, price={2}, remaining={3}, delta={4}, reason={5}]", type, side, price, remaining, delta, reason);
+            return $"[type={type}, side={side}, price={price}, remaining={remaining}, delta={delta}, reason={reason}]";
         }
     }
 }
