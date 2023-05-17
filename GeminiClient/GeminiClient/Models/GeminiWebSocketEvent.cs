@@ -15,7 +15,7 @@ namespace GeminiClient.Models
         public decimal delta { get; set; }
         public string reason { get; set; }
 
-        public long tid { get; set; }
+        public decimal tid { get; set; }
         public decimal amount { get; set; }
         public string makerSide { get; set; }
 

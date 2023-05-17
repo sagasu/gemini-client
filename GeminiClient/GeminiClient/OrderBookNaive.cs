@@ -8,18 +8,18 @@ namespace GeminiClient
 {
     internal class OrderBookNaive
     {
-        private SortedDictionary<decimal, List<Order>> bids;
-        private SortedDictionary<decimal, List<Order>> asks;
+        private readonly SortedDictionary<decimal, List<Order>> _bids;
+        private readonly SortedDictionary<decimal, List<Order>> _asks;
 
         public OrderBookNaive()
         {
-            bids = new SortedDictionary<decimal, List<Order>>(Comparer<decimal>.Create((x, y) => y.CompareTo(x)));
-            asks = new SortedDictionary<decimal, List<Order>>();
+            _bids = new SortedDictionary<decimal, List<Order>>(Comparer<decimal>.Create((x, y) => y.CompareTo(x)));
+            _asks = new SortedDictionary<decimal, List<Order>>();
         }
 
         public void AddOrder(Order order)
         {
-            SortedDictionary<decimal, List<Order>> book = order.Type == OrderType.Buy ? bids : asks;
+            var book = order.Type == OrderType.Buy ? _bids : _asks;
 
             if (!book.ContainsKey(order.Price))
                 book[order.Price] = new List<Order>();
@@ -29,7 +29,7 @@ namespace GeminiClient
 
         public void RemoveOrder(Order order)
         {
-            SortedDictionary<decimal, List<Order>> book = order.Type == OrderType.Buy ? bids : asks;
+            var book = order.Type == OrderType.Buy ? _bids : _asks;
 
             if (book.ContainsKey(order.Price))
             {
@@ -40,14 +40,9 @@ namespace GeminiClient
             }
         }
 
-        public List<Order> GetBids()
-        {
-            return bids.Values.SelectMany(orders => orders).ToList();
-        }
-
-        public List<Order> GetAsks()
-        {
-            return asks.Values.SelectMany(orders => orders).ToList();
-        }
+        public List<Order> GetBids() => _bids.Values.SelectMany(orders => orders).ToList();
+        
+        public List<Order> GetAsks() =>_asks.Values.SelectMany(orders => orders).ToList();
+        
     }
 }
