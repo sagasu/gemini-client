@@ -23,7 +23,9 @@ Initialize();
         var url = new Uri("wss://api.gemini.com/v1/marketdata/BTCUSD");
 
         using var client = new WebsocketClient(url);
-        
+
+        decimal? bestBidValue = null, bestBidQuantity = null, bestAskValue = null, bestAskQuantity = null;
+
         client.ReconnectTimeout = TimeSpan.FromSeconds(30);
         client.ReconnectionHappened.Subscribe(info =>
         {
@@ -69,7 +71,26 @@ Initialize();
 
             var bestBid = orderBook.GetBestBid();
             var bestAsk = orderBook.GetBestAsk();
-            Console.WriteLine($"{bestBid.Key} {bestBid.Value} {bestAsk.Key} {bestAsk.Value}");
+            if (bestBidValue is null || bestBidQuantity is null || bestAskValue is null || bestAskQuantity is null)
+            {
+                bestBidValue = bestBid.Key;
+                bestBidQuantity = bestBid.Value; 
+                bestAskValue = bestAsk.Key;
+                bestAskQuantity = bestAsk.Value;
+            }
+
+            if (bestBidValue != null && bestBidQuantity != null && bestAskValue != null && bestAskQuantity != null &&
+                bestBidValue != bestBid.Key && bestBidQuantity != bestBid.Value && bestAskValue != bestAsk.Key &&
+                bestAskQuantity != bestAsk.Value)
+            {
+                bestBidValue = bestBid.Key;
+                bestBidQuantity = bestBid.Value;
+                bestAskValue = bestAsk.Key;
+                bestAskQuantity = bestAsk.Value;
+                Console.WriteLine($"{bestBidValue} {bestBidQuantity} {bestAskValue} {bestAskQuantity}");
+
+            }
+
         });
 
         client.Start();
