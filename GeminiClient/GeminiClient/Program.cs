@@ -31,42 +31,29 @@ Initialize();
         });
         client.MessageReceived.Subscribe(msg =>
         {
-            Console.WriteLine("Message received: " + msg);
+            //Console.WriteLine("Message received: " + msg);
             var webSocketMessage = GetMessage(msg);
             ExportToCSV(webSocketMessage);
 
             foreach (var geminiWebSocketEvent in webSocketMessage.events)
             {
-                if(geminiWebSocketEvent.type == "change")
+                var orderType = geminiWebSocketEvent.side == "bid" ? OrderType.Buy : OrderType.Sell;
+
+                if (geminiWebSocketEvent.type == "change")
                 {
-                    if (geminiWebSocketEvent.reason == "init")
+                    
+                    var order = new Order()
                     {
-                        orderBook.AddOrder(
-                            new Order()
-                            {
-                                Price = geminiWebSocketEvent.price,
-                                Quantity = geminiWebSocketEvent.delta,
-                                Type = geminiWebSocketEvent.side == "bid" ? OrderType.Buy : OrderType.Sell
-                            });
-                    }else if (geminiWebSocketEvent.reason == "cancel")
-                    {
-                        orderBook.RemoveOrder(
-                            new Order()
-                            {
-                                Price = geminiWebSocketEvent.price,
-                                Quantity = geminiWebSocketEvent.delta,
-                                Type = geminiWebSocketEvent.side == "bid" ? OrderType.Buy : OrderType.Sell
-                            });
-                    }else if (geminiWebSocketEvent.reason == "place")
-                    {
-                        orderBook.AddOrder(
-                            new Order()
-                            {
-                                Price = geminiWebSocketEvent.price,
-                                Quantity = geminiWebSocketEvent.delta,
-                                Type = geminiWebSocketEvent.side == "bid" ? OrderType.Buy : OrderType.Sell
-                            });
-                    }
+                        Price = geminiWebSocketEvent.price,
+                        Quantity = geminiWebSocketEvent.remaining,
+                        Type = orderType
+                    };
+
+                    if (geminiWebSocketEvent.reason is "init" or "place")
+                        orderBook.AddOrder(order);
+                    else if (geminiWebSocketEvent.reason is "cancel")
+                        orderBook.RemoveOrder(order);
+                    
                 }
                 else if(geminiWebSocketEvent.type == "trade")
                 {
@@ -75,12 +62,14 @@ Initialize();
                         {
                             Price = geminiWebSocketEvent.price,
                             Quantity = geminiWebSocketEvent.amount,
-                            Type = geminiWebSocketEvent.makerSide == "bid" ? OrderType.Buy : OrderType.Sell
+                            Type = orderType
                         });
                 }
             }
 
-
+            var bestBid = orderBook.GetBestBid();
+            var bestAsk = orderBook.GetBestAsk();
+            Console.WriteLine($"{bestBid.Key} {bestBid.Value} {bestAsk.Key} {bestAsk.Value}");
         });
 
         client.Start();
