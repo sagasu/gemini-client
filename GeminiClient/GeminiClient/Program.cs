@@ -79,9 +79,7 @@ Initialize();
                 bestAskQuantity = bestAsk.Value;
             }
 
-            if (bestBidValue != null && bestBidQuantity != null && bestAskValue != null && bestAskQuantity != null &&
-                bestBidValue != bestBid.Key && bestBidQuantity != bestBid.Value && bestAskValue != bestAsk.Key &&
-                bestAskQuantity != bestAsk.Value)
+            if (bestBidValue != bestBid.Key && bestBidQuantity != bestBid.Value && bestAskValue != bestAsk.Key && bestAskQuantity != bestAsk.Value)
             {
                 bestBidValue = bestBid.Key;
                 bestBidQuantity = bestBid.Value;

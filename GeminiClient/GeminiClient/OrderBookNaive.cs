@@ -8,6 +8,13 @@ namespace GeminiClient
 {
     internal class OrderBookNaive
     {
+        // SortedDictionary is a BinaryTree
+        // https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.sorteddictionary-2?view=net-7.0#remarks
+        // search: O(log n) 
+        // insert, removal: O(log n) 
+        // unfortunately to get first element it is also a O(log n) operation which is a total disaster :) https://github.com/dotnet/runtime/issues/18668
+        // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections/src/System/Collections/Generic/SortedDictionary.cs
+
         private readonly SortedDictionary<decimal, decimal> _bids;
         private readonly SortedDictionary<decimal, decimal> _asks;
 
