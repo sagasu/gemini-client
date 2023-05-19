@@ -28,28 +28,28 @@ namespace GeminiClient
         {
             var book = order.Type == OrderType.Buy ? _bids : _asks;
 
-            if (!book.ContainsKey(order.Price))
-                book[order.Price] = 0;
+            //if (!book.ContainsKey(order.Price))
+            //    book[order.Price] = 0;
 
-            book[order.Price] += order.Quantity;
+            //book[order.Price] += order.Quantity;
         }
 
         public void RemoveOrder(Order order)
         {
             var book = order.Type == OrderType.Buy ? _bids : _asks;
 
-            if (book.ContainsKey(order.Price))
-            {
-                book[order.Price] -= order.Quantity;
+            //if (book.ContainsKey(order.Price))
+            //{
+            //    book[order.Price] -= order.Quantity;
 
-                if (book[order.Price] == 0)
-                    book.Remove(order.Price);
-            }
+            //    if (book[order.Price] == 0)
+            //        book.Remove(order.Price);
+            //}
         }
 
-        public KeyValuePair<decimal, decimal> GetBestBid() => _bids.Peek();
+        public decimal GetBestBid() => _bids.Peek();
 
-        public KeyValuePair<decimal, decimal> GetBestAsk() => _asks.Peek();
+        public decimal GetBestAsk() => _asks.Peek();
 
     }
 }
