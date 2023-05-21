@@ -10,13 +10,14 @@ namespace GeminiClient
     internal class OrderBookFixedArray
     {
         // Fixed Array size
-        // search: O(log n) 
+        // search: O(FixedSizeOfArray*FractionalPrecision) 
         // insert, removal: O(1) 
-        // on average access to lowest price is O(1) but worst scenario is O(n)
+        // access to best price: worst scenario is O(FixedSizeOfArray*FractionalPrecision)
         //  https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections/src/System/Collections/Generic/SortedDictionary.cs
-
-        private readonly decimal[,] _bids = new decimal[60000,100];
-        private readonly decimal[,] _asks = new decimal[60000,100];
+        private const int FixedSizeOfArray = 60000;
+        private const int FractionalPrecision = 100;
+        private readonly decimal[,] _bids = new decimal[FixedSizeOfArray, FractionalPrecision];
+        private readonly decimal[,] _asks = new decimal[FixedSizeOfArray, FractionalPrecision];
 
         private decimal bestBidPrice;
         private decimal bestBidQuantity;
