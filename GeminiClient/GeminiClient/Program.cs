@@ -6,13 +6,17 @@ using GeminiClient;
 using GeminiClient.Models;
 using Newtonsoft.Json;
 using System.Globalization;
+using System.Threading.Tasks;
 using Websocket.Client;
 
 Console.WriteLine("Hello, World!");
 
 
 var orderBook = new OrderBookSortedDictionary();
+orderBook.PriceChangedEmitter += PrintState;
 Initialize();
+
+void PrintState(object sender, EventArgs e) => Console.WriteLine($"bp:{orderBook.BestBidPrice} bq:{orderBook.BestBidQuantity} ap:{orderBook.BestAskPrice} aq:{orderBook.BestAskQuantity} asks:{orderBook.Asks.Count} bids:{orderBook.Bids.Count}");
 
 void Initialize()
 {

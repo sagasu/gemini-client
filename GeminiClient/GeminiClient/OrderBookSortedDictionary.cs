@@ -15,26 +15,25 @@ namespace GeminiClient
         // unfortunately to get first element it is also a O(log n) https://github.com/dotnet/runtime/issues/18668
         // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections/src/System/Collections/Generic/SortedDictionary.cs
 
-        private readonly SortedDictionary<decimal, decimal> _bids;
-        private readonly SortedDictionary<decimal, decimal> _asks;
+        internal SortedDictionary<decimal, decimal> Bids { get; private set; }
+        internal SortedDictionary<decimal, decimal> Asks { get; private set; }
 
-        private decimal? _bestBidPrice;
-        private decimal? _bestBidQuantity;
-        private decimal? _bestAskPrice;
-        private decimal? _bestAskQuantity;
+        internal decimal? BestBidPrice { get; private set; }
+        internal decimal? BestBidQuantity { get; private set; }
+        internal decimal? BestAskPrice { get; private set; }
+        internal decimal? BestAskQuantity { get; private set; }
 
-        public KeyValuePair<decimal, decimal> GetBestBid() => _bids.FirstOrDefault();
-        public KeyValuePair<decimal, decimal> GetBestAsk() => _asks.FirstOrDefault();
+        public event EventHandler PriceChangedEmitter;
 
         public OrderBookSortedDictionary()
         {
-            _bids = new SortedDictionary<decimal, decimal>(Comparer<decimal>.Create((x, y) => y.CompareTo(x)));
-            _asks = new SortedDictionary<decimal, decimal>();
+            Bids = new SortedDictionary<decimal, decimal>(Comparer<decimal>.Create((x, y) => y.CompareTo(x)));
+            Asks = new SortedDictionary<decimal, decimal>();
         }
 
         public void AddOrder(Order order)
         {
-            var book = order.Type == OrderType.Buy ? _bids : _asks;
+            var book = order.Type == OrderType.Buy ? Bids : Asks;
 
             book[order.Price] = order.Quantity;
             CacheBestPrice(order, book);
@@ -42,7 +41,7 @@ namespace GeminiClient
 
         public void RemoveOrder(Order order)
         {
-            var book = order.Type == OrderType.Buy ? _bids : _asks;
+            var book = order.Type == OrderType.Buy ? Bids : Asks;
 
             if (book.ContainsKey(order.Price))
             {
@@ -52,6 +51,7 @@ namespace GeminiClient
                 {
                     book.Remove(order.Price);
                     CacheBestPriceAfterRemoval(order, book);
+
                 }
             }
         }
@@ -60,23 +60,26 @@ namespace GeminiClient
         {
             if (order.Type == OrderType.Buy)
             {
-                if (order.Price == _bestBidPrice)
+                if (order.Price == BestBidPrice)
                 {
-                    (_bestBidPrice, _bestBidQuantity) = GetBestPrice(book);
-                    PrintState();
+                    (BestBidPrice, BestBidQuantity) = GetBestPriceFromBook(book);
+                    EmitPriceChanged();
                 }
             }
             else
             {
-                if (order.Price == _bestAskPrice)
+                if (order.Price == BestAskPrice)
                 {
-                    (_bestAskPrice, _bestAskQuantity) = GetBestPrice(book);
-                    PrintState();
+                    (BestAskPrice, BestAskQuantity) = GetBestPriceFromBook(book);
+                    EmitPriceChanged();
                 }
             }
         }
 
-        private (decimal?, decimal?) GetBestPrice(SortedDictionary<decimal, decimal> book)
+        private void EmitPriceChanged() => PriceChangedEmitter.Invoke(this, EventArgs.Empty);
+        
+
+        private (decimal?, decimal?) GetBestPriceFromBook(SortedDictionary<decimal, decimal> book)
         {
             if (book.Count == 0) return (null, null);
             
@@ -85,24 +88,24 @@ namespace GeminiClient
             return (bestBid.Key, bestBid.Value);
         }
 
-        private void PrintState() => Console.WriteLine($"bp:{_bestBidPrice} bq:{_bestBidQuantity} ap:{_bestAskPrice} aq:{_bestAskQuantity} asks:{_asks.Count} bids:{_bids.Count}");
+        //private void PrintState() => Console.WriteLine($"bp:{BestBidPrice} bq:{BestBidQuantity} ap:{BestAskPrice} aq:{BestAskQuantity} asks:{Asks.Count} bids:{Bids.Count}");
         
         void CacheBestPrice(Order order, SortedDictionary<decimal, decimal> book)
         {
             if (order.Type == OrderType.Buy)
             {
-                if (order.Price >= _bestBidPrice || _bestBidPrice is null)
+                if (order.Price >= BestBidPrice || BestBidPrice is null)
                 {
-                    (_bestBidPrice, _bestBidQuantity) = GetBestPrice(order, book);
-                    PrintState();
+                    (BestBidPrice, BestBidQuantity) = GetBestPrice(order, book);
+                    EmitPriceChanged();
                 }
             }
             else
             {
-                if (order.Price <= _bestAskPrice || _bestAskPrice is null)
+                if (order.Price <= BestAskPrice || BestAskPrice is null)
                 {
-                    (_bestAskPrice, _bestAskQuantity) = GetBestPrice(order, book);
-                    PrintState();
+                    (BestAskPrice, BestAskQuantity) = GetBestPrice(order, book);
+                    EmitPriceChanged();
                 }
             }
         }
@@ -112,7 +115,7 @@ namespace GeminiClient
             if (order.Quantity == 0)
             {
                 book.Remove(order.Price);
-                return GetBestPrice(book);
+                return GetBestPriceFromBook(book);
             }
 
             return (order.Price, order.Quantity);
