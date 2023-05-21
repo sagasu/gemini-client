@@ -69,26 +69,6 @@ Initialize();
                 }
             }
 
-            var bestBid = orderBook.GetBestBid();
-            var bestAsk = orderBook.GetBestAsk();
-            if (bestBidValue is null || bestBidQuantity is null || bestAskValue is null || bestAskQuantity is null)
-            {
-                bestBidValue = bestBid.Key;
-                bestBidQuantity = bestBid.Value; 
-                bestAskValue = bestAsk.Key;
-                bestAskQuantity = bestAsk.Value;
-            }
-
-            if (bestBidValue != bestBid.Key && bestBidQuantity != bestBid.Value && bestAskValue != bestAsk.Key && bestAskQuantity != bestAsk.Value)
-            {
-                bestBidValue = bestBid.Key;
-                bestBidQuantity = bestBid.Value;
-                bestAskValue = bestAsk.Key;
-                bestAskQuantity = bestAsk.Value;
-                Console.WriteLine($"{bestBidValue} {bestBidQuantity} {bestAskValue} {bestAskQuantity}");
-
-            }
-
         });
 
         client.Start();

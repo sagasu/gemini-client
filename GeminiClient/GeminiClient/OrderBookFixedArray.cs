@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,15 +12,13 @@ namespace GeminiClient
         // Fixed Array size
         // search: O(log n) 
         // insert, removal: O(1) 
-        // on average access to lowest price is O(1) but worst scenario is O(log n)
+        // on average access to lowest price is O(1) but worst scenario is O(n)
         //  https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections/src/System/Collections/Generic/SortedDictionary.cs
 
         private readonly decimal[,] _bids = new decimal[60000,100];
         private readonly decimal[,] _asks = new decimal[60000,100];
 
-        public OrderBookFixedArray()
-        {
-        }
+        public OrderBookFixedArray() { }
 
         private decimal bestBidPrice;
         private decimal bestBidQuantity;
@@ -29,65 +28,48 @@ namespace GeminiClient
 
         public void AddOrder(Order order)
         {
-            decimal[,] book;
-            if (order.Type == OrderType.Buy)
-            {
-                if (order.Price >= bestBidPrice)
-                {
-                    bestBidPrice = order.Price;
-                    bestBidQuantity = order.Quantity;
-                }
-                    
-                book = _bids;
-            }
-            else
-            {
-                if (order.Price <= bestAskPrice)
-                {
-                    bestBidPrice = order.Price;
-                    bestBidQuantity = order.Quantity;
-                }
+            var book = order.Type == OrderType.Buy ? _bids : _asks;
 
-                book = _asks;
-            }
+            UpdateBestPriceAndQuantityForBook(order);
 
-            var (intPart, fractionalPart) = GetDecimalAndFractionPart(order);
+            var (intPart, fractionalPart) = GetDecimalAndFractionPart(order, book);
 
             book[intPart, fractionalPart] += order.Quantity;
         }
-
         public void RemoveOrder(Order order)
         {
-            decimal[,] book;
-            if (order.Type == OrderType.Buy)
-            {
-                if (order.Price >= bestBidPrice)
-                {
-                    bestBidPrice = order.Price;
-                    bestBidQuantity = order.Quantity;
-                }
+            var book = order.Type == OrderType.Buy ? _bids : _asks;
+            UpdateBestPriceAndQuantityForBook(order);
 
-                book = _bids;
-            }
-            else
-            {
-                if (order.Price <= bestAskPrice)
-                {
-                    bestBidPrice = order.Price;
-                    bestBidQuantity = order.Quantity;
-                }
-
-                book = _asks;
-            }
-
-            var (intPart, fractionalPart)= GetDecimalAndFractionPart(order);
+            var (intPart, fractionalPart)= GetDecimalAndFractionPart(order, book);
 
             book[intPart, fractionalPart] -= order.Quantity;
         }
 
-        private (int,int) GetDecimalAndFractionPart(Order order)
+        void UpdateBestPriceAndQuantityForBook(Order order)
         {
-            var book = order.Type == OrderType.Buy ? _bids : _asks;
+            if (order.Type == OrderType.Buy)
+            {
+                if (order.Price >= bestBidPrice)
+                {
+                    bestBidPrice = order.Price;
+                    bestBidQuantity = order.Quantity;
+                    Console.WriteLine($"{bestBidPrice} {bestBidQuantity} {bestAskPrice} {bestAskQuantity}");
+                }
+            }
+            else
+            {
+                if (order.Price <= bestAskPrice)
+                {
+                    bestAskPrice = order.Price;
+                    bestAskQuantity = order.Quantity;
+                    Console.WriteLine($"{bestBidPrice} {bestBidQuantity} {bestAskPrice} {bestAskQuantity}");
+                }
+            }
+        }
+
+        private (int, int) GetDecimalAndFractionPart(Order order, decimal[,] book)
+        {
             var intPart = (int)order.Price;
             var fractionalPart = (int)((order.Price - intPart) % 1.0m);
             return (intPart,fractionalPart);
