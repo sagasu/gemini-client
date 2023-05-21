@@ -51,22 +51,14 @@ Initialize();
                         Type = orderType
                     };
 
-                    if (geminiWebSocketEvent.reason is "init" or "place")
+                    if (geminiWebSocketEvent.reason is "initial" or "place")
                         orderBook.AddOrder(order);
                     else if (geminiWebSocketEvent.reason is "cancel")
                         orderBook.RemoveOrder(order);
                     
                 }
-                else if(geminiWebSocketEvent.type == "trade")
-                {
-                    orderBook.AddOrder(
-                        new Order()
-                        {
-                            Price = geminiWebSocketEvent.price,
-                            Quantity = geminiWebSocketEvent.amount,
-                            Type = orderType
-                        });
-                }
+                // if it is trade, then the following operation is a change that updates the book with info from trade, no need to track it.
+                // else if (geminiWebSocketEvent.type == "trade") { }
             }
 
         });

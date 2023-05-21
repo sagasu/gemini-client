@@ -18,10 +18,10 @@ namespace GeminiClient
         private readonly SortedDictionary<decimal, decimal> _bids;
         private readonly SortedDictionary<decimal, decimal> _asks;
 
-        private decimal bestBidPrice;
-        private decimal bestBidQuantity;
-        private decimal bestAskPrice;
-        private decimal bestAskQuantity;
+        private decimal? _bestBidPrice;
+        private decimal? _bestBidQuantity;
+        private decimal? _bestAskPrice;
+        private decimal? _bestAskQuantity;
 
         public OrderBookNaive()
         {
@@ -33,11 +33,8 @@ namespace GeminiClient
         {
             var book = order.Type == OrderType.Buy ? _bids : _asks;
 
-            if (!book.ContainsKey(order.Price))
-                book[order.Price] = 0;
-
             book[order.Price] = order.Quantity;
-            UpdateBestPriceAndQuantityForBook(order);
+            UpdateBestPriceAndQuantityForBook(order, book);
         }
 
         public void RemoveOrder(Order order)
@@ -51,43 +48,113 @@ namespace GeminiClient
                 if (book[order.Price] == 0)
                 {
                     book.Remove(order.Price);
-
                     if (order.Type == OrderType.Buy)
                     {
-                        var bestBid = GetBestBid();
-                        bestBidPrice = bestBid.Key;
-                        bestBidQuantity = bestBid.Value;
-                        Console.WriteLine($"{bestBidPrice} {bestBidQuantity} {bestAskPrice} {bestAskQuantity}");
+                        if (order.Price == _bestBidPrice)
+                            FindBestBid();
                     }
                     else
                     {
-                        var bestBid = GetBestAsk();
-                        bestAskPrice = bestBid.Key;
-                        bestAskQuantity = bestBid.Value;
-                        Console.WriteLine($"{bestBidPrice} {bestBidQuantity} {bestAskPrice} {bestAskQuantity}");
+                        if (order.Price == _bestAskPrice)
+                            FindBestAsk();
                     }
                 }
+
             }
         }
 
-        void UpdateBestPriceAndQuantityForBook(Order order)
+        private void FindBestBid()
+        {
+            if (_bids.Count == 0)
+            {
+                _bestBidPrice = null;
+                _bestBidQuantity = null;
+            }
+            else
+            {
+                var bestBid = GetBestBid();
+                if (bestBid.Key == 0)
+                {
+                    Console.WriteLine("bid it is 0000000000000000000000000");
+                }
+                else if (bestBid.Value == 0)
+                {
+                    Console.WriteLine("bid quantity is 0000000000000000000000000");
+                }
+
+
+                _bestBidPrice = bestBid.Key;
+                _bestBidQuantity = bestBid.Value;
+            }
+
+            PrintState();
+        }
+
+        private void FindBestAsk()
+        {
+            if (_asks.Count == 0)
+            {
+                _bestAskPrice = null;
+                _bestAskQuantity = null;
+            }
+            else
+            {
+                var bestBid = GetBestAsk();
+                if (bestBid.Key == 0)
+                {
+                    Console.WriteLine("it is 0000000000000000000000000");
+                }
+                else if (bestBid.Value == 0)
+                {
+                    Console.WriteLine("quantity is 0000000000000000000000000");
+                }
+
+                _bestAskPrice = bestBid.Key;
+                _bestAskQuantity = bestBid.Value;
+            }
+
+            PrintState();
+        }
+
+        private void PrintState() => Console.WriteLine($"bp:{_bestBidPrice} bq:{_bestBidQuantity} ap:{_bestAskPrice} aq:{_bestAskQuantity} asks:{_asks.Count} bids:{_bids.Count}");
+        
+        void UpdateBestPriceAndQuantityForBook(Order order, SortedDictionary<decimal, decimal> book)
         {
             if (order.Type == OrderType.Buy)
             {
-                if (order.Price >= bestBidPrice)
+                if (order.Price >= _bestBidPrice || _bestBidPrice is null)
                 {
-                    bestBidPrice = order.Price;
-                    bestBidQuantity = order.Quantity;
-                    Console.WriteLine($"{bestBidPrice} {bestBidQuantity} {bestAskPrice} {bestAskQuantity}");
+                    if (order.Quantity == 0)
+                    {
+                        book.Remove(order.Price);
+                        Console.WriteLine("update bid quantity is 0000000000000000000000000");
+                        FindBestBid();
+                    }
+                    else
+                    {
+                        _bestBidPrice = order.Price;
+                        _bestBidQuantity = order.Quantity;
+                    }
+
+                    PrintState();
                 }
             }
             else
             {
-                if (order.Price <= bestAskPrice)
+                if (order.Price <= _bestAskPrice || _bestAskPrice is null)
                 {
-                    bestAskPrice = order.Price;
-                    bestAskQuantity = order.Quantity;
-                    Console.WriteLine($"{bestBidPrice} {bestBidQuantity} {bestAskPrice} {bestAskQuantity}");
+                    if (order.Quantity == 0)
+                    {
+                        book.Remove(order.Price);
+                        Console.WriteLine("update ask quantity is 0000000000000000000000000");
+                        FindBestAsk();
+                    }
+                    else
+                    {
+                        _bestAskPrice = order.Price;
+                        _bestAskQuantity = order.Quantity;
+                        PrintState();
+                    }
                 }
             }
         }
