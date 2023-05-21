@@ -18,8 +18,6 @@ namespace GeminiClient
         private readonly decimal[,] _bids = new decimal[60000,100];
         private readonly decimal[,] _asks = new decimal[60000,100];
 
-        public OrderBookFixedArray() { }
-
         private decimal bestBidPrice;
         private decimal bestBidQuantity;
 

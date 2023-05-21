@@ -11,10 +11,10 @@ using Websocket.Client;
 Console.WriteLine("Hello, World!");
 
 
-var orderBook = new OrderBookNaive();
+var orderBook = new OrderBookSortedDictionary();
 Initialize();
 
- void Initialize()
+void Initialize()
 {
     Console.CursorVisible = false;
     try
@@ -24,7 +24,7 @@ Initialize();
 
         using var client = new WebsocketClient(url);
 
-        decimal? bestBidValue = null, bestBidQuantity = null, bestAskValue = null, bestAskQuantity = null;
+        var isInit = true;
 
         client.ReconnectTimeout = TimeSpan.FromSeconds(30);
         client.ReconnectionHappened.Subscribe(info =>
@@ -41,9 +41,13 @@ Initialize();
             {
                 var orderType = geminiWebSocketEvent.side == "bid" ? OrderType.Buy : OrderType.Sell;
 
+                // if it is "trade", then the following event is a "change" that updates the book with info from trade, no need to track "trade" or other types then.
                 if (geminiWebSocketEvent.type == "change")
                 {
-                    
+                    //sometimes on socket opening app receives messages that are not "initial", for example "place", and they should be filtered until "initial" arrive.
+                    if (isInit && geminiWebSocketEvent.reason is not "initial") continue;
+                    isInit = false;
+
                     var order = new Order()
                     {
                         Price = geminiWebSocketEvent.price,
@@ -55,10 +59,7 @@ Initialize();
                         orderBook.AddOrder(order);
                     else if (geminiWebSocketEvent.reason is "cancel")
                         orderBook.RemoveOrder(order);
-                    
                 }
-                // if it is trade, then the following operation is a change that updates the book with info from trade, no need to track it.
-                // else if (geminiWebSocketEvent.type == "trade") { }
             }
 
         });
