@@ -8,11 +8,11 @@ namespace GeminiClient
 {
     internal class OrderBookSortedDictionary
     {
-        // SortedDictionary is a BinaryTree
+        // SortedDictionary is a BinaryTree (Red Black tree to be more specific https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections/src/System/Collections/Generic/SortedSet.cs)
         // https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.sorteddictionary-2?view=net-7.0#remarks
         // search: O(log n) 
         // insert, removal: O(log n) 
-        // unfortunately to get first element it is also a O(log n) https://github.com/dotnet/runtime/issues/18668
+        // unfortunately to get first element (min or max depending on need) it is also a O(log n) https://github.com/dotnet/runtime/issues/18668
         // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections/src/System/Collections/Generic/SortedDictionary.cs
 
         internal SortedDictionary<decimal, decimal> Bids { get; private set; }
@@ -23,7 +23,8 @@ namespace GeminiClient
         internal decimal? BestAskPrice { get; private set; }
         internal decimal? BestAskQuantity { get; private set; }
 
-        public event EventHandler PriceChangedEmitter;
+        // Clients can be notified when the best price changed by subscribing to this event.
+        public event EventHandler BestPriceChangedEmitter;
 
         public OrderBookSortedDictionary()
         {
@@ -76,7 +77,7 @@ namespace GeminiClient
             }
         }
 
-        private void EmitPriceChanged() => PriceChangedEmitter.Invoke(this, EventArgs.Empty);
+        private void EmitPriceChanged() => BestPriceChangedEmitter.Invoke(this, EventArgs.Empty);
         
 
         private (decimal?, decimal?) GetBestPriceFromBook(SortedDictionary<decimal, decimal> book)
@@ -88,8 +89,6 @@ namespace GeminiClient
             return (bestBid.Key, bestBid.Value);
         }
 
-        //private void PrintState() => Console.WriteLine($"bp:{BestBidPrice} bq:{BestBidQuantity} ap:{BestAskPrice} aq:{BestAskQuantity} asks:{Asks.Count} bids:{Bids.Count}");
-        
         void CacheBestPrice(Order order, SortedDictionary<decimal, decimal> book)
         {
             if (order.Type == OrderType.Buy)
@@ -119,7 +118,6 @@ namespace GeminiClient
             }
 
             return (order.Price, order.Quantity);
-            
         }
     }
 }

@@ -6,17 +6,15 @@ using GeminiClient;
 using GeminiClient.Models;
 using Newtonsoft.Json;
 using System.Globalization;
-using System.Threading.Tasks;
 using Websocket.Client;
 
 Console.WriteLine("Hello, World!");
 
 
 var orderBook = new OrderBookSortedDictionary();
-orderBook.PriceChangedEmitter += PrintState;
 Initialize();
 
-void PrintState(object sender, EventArgs e) => Console.WriteLine($"bp:{orderBook.BestBidPrice} bq:{orderBook.BestBidQuantity} ap:{orderBook.BestAskPrice} aq:{orderBook.BestAskQuantity} asks:{orderBook.Asks.Count} bids:{orderBook.Bids.Count}");
+void PrintBestPrice(object sender, EventArgs e) => Console.WriteLine($"bp:{orderBook.BestBidPrice} bq:{orderBook.BestBidQuantity} ap:{orderBook.BestAskPrice} aq:{orderBook.BestAskQuantity} asks:{orderBook.Asks.Count} bids:{orderBook.Bids.Count}");
 
 void Initialize()
 {
@@ -66,15 +64,22 @@ void Initialize()
                 }
             }
 
+            // Start showing best price after entire order book is constructed.
+            if (!isInit)
+            {
+                PrintBestPrice(null, EventArgs.Empty);
+                orderBook.BestPriceChangedEmitter += PrintBestPrice;
+            }
+
         });
 
         client.Start();
         exitEvent.WaitOne();
 
     }
-    catch (Exception ex)
+    catch (Exception ex) 
     {
-        Console.WriteLine("ERROR: " + ex.ToString());
+        Console.WriteLine("ERROR: " + ex);
     }
     Console.ReadKey();
 }
